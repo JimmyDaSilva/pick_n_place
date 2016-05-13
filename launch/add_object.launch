@@ -1,0 +1,15 @@
+<launch>
+
+  <arg name="x" default="0.5" />
+  <arg name="y" default="0.0" />
+  <arg name="z" default="0.0" />
+  <arg name="angle" default="180" />
+
+  <node name="lwr_add_object" pkg="lwr_pick_n_place" type="add_object" output="screen">
+	<param name="x_goal" value="$(arg x)" />
+  	<param name="y_goal" value="$(arg y)" />
+  	<param name="z_goal" value="$(arg z)" />
+  	<param name="angle" value="$(arg angle)" />
+  </node>
+
+</launch>

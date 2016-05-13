@@ -1,0 +1,34 @@
+  joint0_position_controller:
+    type: "effort_controllers/JointPositionController"
+    joint: joint_0
+    pid: {p: 450,  i: 10, d: 15, i_clamp: 1}
+
+  joint1_position_controller:
+    type: "effort_controllers/JointPositionController"
+    joint: joint_1
+    pid: {p: 450,  i: 10, d: 15, i_clamp: 1}
+
+  joint2_position_controller:
+    type: "effort_controllers/JointPositionController"
+    joint: joint_2
+    pid: {p: 350,  i: 8, d: 2, i_clamp: 1}
+
+  joint3_position_controller:
+    type: "effort_controllers/JointPositionController"
+    joint: joint_3
+    pid: {p: 200,  i: 5, d: 2, i_clamp: 1}
+
+  joint4_position_controller:
+    type: "effort_controllers/JointPositionController"
+    joint: joint_4
+    pid: {p: 150,  i: 5, d: 0.01, i_clamp: 1}
+
+  joint5_position_controller:
+    type: "effort_controllers/JointPositionController"
+    joint: joint_5
+    pid: {p: 10,  i: 0.1, d: 0.01, i_clamp: 1}
+
+  joint6_position_controller:
+    type: "effort_controllers/JointPositionController"
+    joint: joint_6
+    pid: {p: 1,  i: 0.01, d: 0.001, i_clamp: 0.5}

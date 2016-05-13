@@ -1,0 +1,27 @@
+<launch>
+
+  <!-- Load params for the joint position controllers -->
+  <rosparam command="load" file="$(find lwr_pick_n_place)/launch/joint_position_controllers.yaml"/>
+
+  <!-- Stop joint trajectory controller -->
+  <node name="stop_trajectory_controller" pkg="controller_manager" type="controller_manager" args="stop joint_trajectory_controller"/>
+
+  <!-- Load joint position controllers -->
+  <node name="load_joint0_controller" pkg="controller_manager" type="controller_manager" args="load joint0_position_controller"/>
+  <node name="load_joint1_controller" pkg="controller_manager" type="controller_manager" args="load joint1_position_controller"/>
+  <node name="load_joint2_controller" pkg="controller_manager" type="controller_manager" args="load joint2_position_controller"/>
+  <node name="load_joint3_controller" pkg="controller_manager" type="controller_manager" args="load joint3_position_controller"/>
+  <node name="load_joint4_controller" pkg="controller_manager" type="controller_manager" args="load joint4_position_controller"/>
+  <node name="load_joint5_controller" pkg="controller_manager" type="controller_manager" args="load joint5_position_controller"/>
+  <node name="load_joint6_controller" pkg="controller_manager" type="controller_manager" args="load joint6_position_controller"/>
+
+  <!-- Start joint position controllers -->
+  <node name="start_joint0_controller" pkg="controller_manager" type="controller_manager" args="start joint0_position_controller"/>
+  <node name="start_joint1_controller" pkg="controller_manager" type="controller_manager" args="start joint1_position_controller"/>
+  <node name="start_joint2_controller" pkg="controller_manager" type="controller_manager" args="start joint2_position_controller"/>
+  <node name="start_joint3_controller" pkg="controller_manager" type="controller_manager" args="start joint3_position_controller"/>
+  <node name="start_joint4_controller" pkg="controller_manager" type="controller_manager" args="start joint4_position_controller"/>
+  <node name="start_joint5_controller" pkg="controller_manager" type="controller_manager" args="start joint5_position_controller"/>
+  <node name="start_joint6_controller" pkg="controller_manager" type="controller_manager" args="start joint6_position_controller"/>
+
+</launch>
