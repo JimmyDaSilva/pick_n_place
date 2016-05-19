@@ -149,46 +149,17 @@ public:
   // Look for the object name in the scene and return its collision object
   moveit_msgs::CollisionObjectPtr getCollisionObject(std::string object_name);
 
-  // From the current joint pose, the robot moves the requested bin from its location
-  // to the target location, and backs away
-  bool moveObjectToTarget(int bin_number, double x_target, double y_target, double angle_target, bool is_holding_bin_at_start);
-
-  // From the current joint pose, the robot moves to the grasp location for the given bin
-  // The robot is not holding a bin during this method
-  bool approachObject(int bin_number, double& bin_height);
-
-  // On the assumption that the robot is currently holding a bin, the robot moves the
-  // bin to the target place location, but does not release the bin
-  bool deliverObject(int bin_number, double x_target, double y_target, double angle_target, double bin_height);
-
   // Go on top of an epingle
   bool moveAboveEpingle(const std::string obj_name);
   
   // Go on top of a hole
   bool moveAbovePlaque(const std::string obj_name);
   
-  // Move arm to pose above bin
-  bool moveAboveObject(int bin_number, double& bin_height); 
-
-  // Find pose above object
-  void getObjectAbovePose(moveit_msgs::CollisionObjectPtr bin_coll_obj, geometry_msgs::Pose& pose, double& bin_height);
-
-  // Move arm to target (X,Y,R), above a place location (angle_target is in degrees)
-  bool carryObjectTo(double x_target, double y_target, double angle_target, double bin_height);
+  // Go to an epingle
+  bool moveToEpingle(const std::string obj_name);
   
-  // finds the pose above a target bin (angle_target is in degrees)
-  void getCarryObjectPose(double x_target, double y_target, double angle_target, double bin_height, geometry_msgs::Pose& pose);
-
-  // Move arm across freespace to target pose  
-  bool traverseMove(geometry_msgs::Pose& pose);
-
-  // Move arm vertically up above bins
-  bool ascent(double bin_height);
-
-  // Move arm vertically down to place height
-  bool descent(double bin_height);  
-
-
+  // Go to a hole
+  bool moveToPlaque(const std::string obj_name);
 
   // attach the collision model to the robot
   bool attachObject(std::string object_name);  
@@ -198,12 +169,6 @@ public:
   
   // Remove all objects of the world and also the ones attached to the robot
   void cleanObjects();
-
-
-
-//   bool executeGripperAction(bool is_close, bool wait_for_result);
-  
-  
 
   //*** Class variables ***//
   
@@ -222,9 +187,6 @@ public:
   moveit_msgs::GetCartesianPath::Response cart_path_srv_resp_;
   
   ros::Publisher attached_object_publisher_, planning_scene_diff_publisher_;
-
-//   actionlib::SimpleActionClient<control_msgs::GripperCommandAction> gripper_ac;
-//   actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction> excel_ac;
   
   moveit_msgs::PlanningScene planning_scene_msg_;
   planning_scene::PlanningScenePtr full_planning_scene_;

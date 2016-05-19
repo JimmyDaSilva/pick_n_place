@@ -410,12 +410,6 @@ bool PickNPlace::addCylinderObject(const geometry_msgs::Pose object_pose)
   primitive_object.dimensions.push_back(0.015); // radius
   collision_object.primitives.push_back(primitive_object);
   collision_object.primitive_poses.push_back(object_pose);
-  
-  // Define the collision object as a mesh
-//   collision_object.meshes.clear();
-//   collision_object.mesh_poses.clear();
-//   collision_object.meshes.push_back(co_mesh);
-//   collision_object.mesh_poses.push_back(mesh_pose);
 
   // Put the object in the environment //
   planning_scene_msg_.world.collision_objects.clear();
@@ -559,6 +553,10 @@ bool PickNPlace::detachObject(){
     geometry_msgs::Pose object_pose;
     this->compute_fk(planning_scene_msg_.robot_state.joint_state, object_pose);
 
+    // TODO
+    // Translation between /link_7 and /ati_link
+    object_pose.position.z -= 0.055;
+    
     tf::Quaternion co_quat;
     tf::quaternionMsgToTF(object_pose.orientation, co_quat);
     double roll, pitch, yaw;
@@ -570,14 +568,12 @@ bool PickNPlace::detachObject(){
     if (attached_object.object.primitive_poses.size() >0){
 
     attached_object.object.primitive_poses[0].position = object_pose.position;
-    attached_object.object.primitive_poses[0].position.z = 0.13/2.0;
     attached_object.object.primitive_poses[0].orientation.x = quat.x();
     attached_object.object.primitive_poses[0].orientation.y = quat.y();
     attached_object.object.primitive_poses[0].orientation.z = quat.z();
     attached_object.object.primitive_poses[0].orientation.w = quat.w();
     }else{
       attached_object.object.mesh_poses[0].position = object_pose.position;
-//     attached_object.object.mesh_poses[0].position.z = 0.0;
       attached_object.object.mesh_poses[0].orientation.x = quat.x();
       attached_object.object.mesh_poses[0].orientation.y = quat.y();
       attached_object.object.mesh_poses[0].orientation.z = quat.z();
@@ -599,15 +595,6 @@ void PickNPlace::cleanObjects(){
   // update the planning scene to get the robot's state
   getPlanningScene(planning_scene_msg_, full_planning_scene_);
   
-//   planning_scene_msg_.robot_state.attached_collision_objects.clear();
-//   planning_scene_msg_.world.collision_objects.clear();
-//   planning_scene_msg_.is_diff = false;
-//   planning_scene_diff_publisher_.publish(planning_scene_msg_);
-//   
-//   moveit_msgs::PlanningScene empty_scene;
-//   empty_scene.is_diff = false;
-//   planning_scene_diff_publisher_.publish(empty_scene);
-  
   for (int i = 0; i<planning_scene_msg_.robot_state.attached_collision_objects.size(); i++)
     planning_scene_msg_.robot_state.attached_collision_objects[i].object.operation = moveit_msgs::CollisionObject::REMOVE;
   for (int i = 0; i<planning_scene_msg_.world.collision_objects.size(); i++)
@@ -618,6 +605,46 @@ void PickNPlace::cleanObjects(){
 }
 
 bool PickNPlace::moveAboveEpingle(const std::string obj_name)
+{
+  ROS_INFO_STREAM("Moving above "<<obj_name);
+  moveit_msgs::CollisionObjectPtr coll_obj = getCollisionObject(obj_name);
+  if (!coll_obj)
+    return false;
+
+  geometry_msgs::Pose target_pose, obj_pose;
+  obj_pose = coll_obj->mesh_poses[0];
+  
+  tf::Transform object_transform;
+  object_transform.setOrigin(tf::Vector3(obj_pose.position.x, obj_pose.position.y, obj_pose.position.z));
+  object_transform.setRotation(tf::Quaternion(obj_pose.orientation.x, obj_pose.orientation.y, obj_pose.orientation.z, obj_pose.orientation.w));
+  
+  tf::Transform up_transform;
+  up_transform.setOrigin(tf::Vector3(0.0, 0.0, 0.12));
+  tf::Quaternion rotation;
+  rotation.setRPY(0,0,0);
+  up_transform.setRotation(rotation);
+  
+  tf::Transform pi_rotation_transform;
+  pi_rotation_transform.setOrigin(tf::Vector3(0.0, 0.0, 0.0));
+  tf::Quaternion pi_rotation;
+  pi_rotation.setRPY(M_PI,0,0);
+  pi_rotation_transform.setRotation(pi_rotation);
+  
+  object_transform *= up_transform;
+  object_transform *= pi_rotation_transform;
+  
+  target_pose.position.x = object_transform.getOrigin().getX();
+  target_pose.position.y = object_transform.getOrigin().getY();
+  target_pose.position.z = object_transform.getOrigin().getZ();
+  target_pose.orientation.x = object_transform.getRotation().getX();
+  target_pose.orientation.y = object_transform.getRotation().getY();
+  target_pose.orientation.z = object_transform.getRotation().getZ();
+  target_pose.orientation.w = object_transform.getRotation().getW();
+  
+  return this->moveToCartesianPose(target_pose);
+}
+
+bool PickNPlace::moveToEpingle(const std::string obj_name)
 {
   ROS_INFO_STREAM("Moving above "<<obj_name);
   moveit_msgs::CollisionObjectPtr coll_obj = getCollisionObject(obj_name);
@@ -672,21 +699,12 @@ bool PickNPlace::moveAbovePlaque(const std::string obj_name)
   object_transform.setRotation(tf::Quaternion(obj_pose.orientation.x, obj_pose.orientation.y, obj_pose.orientation.z, obj_pose.orientation.w));
   
   tf::Transform up_transform;
-  up_transform.setOrigin(tf::Vector3(0.0, 0.0, -0.2));
+  up_transform.setOrigin(tf::Vector3(0.0, 0.0, -0.3));
   tf::Quaternion rotation;
   rotation.setRPY(0,0,0);
   up_transform.setRotation(rotation);
   
-  tf::Transform pi_rotation_transform;
-  pi_rotation_transform.setOrigin(tf::Vector3(0.0, 0.0, 0.0));
-  tf::Quaternion pi_rotation;
-  pi_rotation.setRPY(M_PI,0,0);
-  pi_rotation_transform.setRotation(pi_rotation);
-  
-  ROS_ERROR("object pose (%f, %f, %f)",object_transform.getOrigin().getX(), object_transform.getOrigin().getY(),object_transform.getOrigin().getZ());
   object_transform *= up_transform;
-//   object_transform *= pi_rotation_transform;
-  ROS_ERROR("goal pose (%f, %f, %f)",object_transform.getOrigin().getX(), object_transform.getOrigin().getY(),object_transform.getOrigin().getZ());
   
   target_pose.position.x = object_transform.getOrigin().getX();
   target_pose.position.y = object_transform.getOrigin().getY();
@@ -699,355 +717,35 @@ bool PickNPlace::moveAbovePlaque(const std::string obj_name)
   return this->moveToCartesianPose(target_pose);
 }
 
-
-
-
-
-
-// Not tested yet
-
-
-
-
-///*
-// bool PickNPlace::approachObject(int bin_number, double& bin_height)
-// {
-//   ROS_INFO("Approaching bin %d", bin_number);
-//   if(!moveAboveObject(bin_number, bin_height)) {
-//     ROS_ERROR("Failed to move above bin #%d.", bin_number);
-//     return false;
-//   }
-//   if(!descent(bin_height)) {
-//     ROS_ERROR("Failed to descend after moving above bin.");
-//     return false;
-//   }
-//   return true;
-// }
-//*/
-
-
-/*
-bool PickNPlace::moveObjectToTarget(int bin_number, double x_target, double y_target, double angle_target, bool is_holding_bin_at_start)
+bool PickNPlace::moveToPlaque(const std::string obj_name)
 {
-  ROS_INFO("Moving bin %d to target (%.3f, %.3f, %f)", bin_number, x_target, y_target, angle_target);
+  ROS_INFO_STREAM("Moving above "<<obj_name);
+  moveit_msgs::CollisionObjectPtr coll_obj = getCollisionObject(obj_name);
+  if (!coll_obj)
+    return false;
 
-  double bin_height;
+  geometry_msgs::Pose target_pose, obj_pose;
+  obj_pose = coll_obj->mesh_poses[0];
   
-  ////////////////// TYPICAL OPERATION STARTS HERE ///////////////////////////
-  if (!is_holding_bin_at_start) {
-//     executeGripperAction(false, false); // open gripper, but don't wait
-    if(!approachObject(bin_number, bin_height)) {
-      ROS_ERROR("Failed to approach bin #%d.", bin_number);
-      return false;
-    }
-    if(!attachObject(bin_number)) {
-      ROS_ERROR("Failed to attach bin #%d.", bin_number);
-      return false;
-    }
-  }
-
-  ///////////////////////////// HOLDING BIN ///////////////////////////////////
-  if(!deliverObject(bin_number, x_target, y_target, angle_target, bin_height)) {
-    ROS_ERROR("Failed to deliver bin to target (%.3f, %.3f, %f)", 
-        x_target, y_target, angle_target);
-    return false;
-  }
-  if(!detachObject()) {
-    ROS_ERROR("Failed to detach bin.");
-    return false;
-  }
-  /////////////////////////////////////////////////////////////////////////////
-  if(!ascent(bin_height)) {
-    ROS_ERROR("Failed to ascend after releasing bin.");
-    return false;
-  }
-  return true;
+  tf::Transform object_transform;
+  object_transform.setOrigin(tf::Vector3(obj_pose.position.x, obj_pose.position.y, obj_pose.position.z));
+  object_transform.setRotation(tf::Quaternion(obj_pose.orientation.x, obj_pose.orientation.y, obj_pose.orientation.z, obj_pose.orientation.w));
+  
+  tf::Transform up_transform;
+  up_transform.setOrigin(tf::Vector3(0.0, 0.0, -0.2));
+  tf::Quaternion rotation;
+  rotation.setRPY(0,0,0);
+  up_transform.setRotation(rotation);
+  
+  object_transform *= up_transform;
+  
+  target_pose.position.x = object_transform.getOrigin().getX();
+  target_pose.position.y = object_transform.getOrigin().getY();
+  target_pose.position.z = object_transform.getOrigin().getZ();
+  target_pose.orientation.x = object_transform.getRotation().getX();
+  target_pose.orientation.y = object_transform.getRotation().getY();
+  target_pose.orientation.z = object_transform.getRotation().getZ();
+  target_pose.orientation.w = object_transform.getRotation().getW();
+  
+  return this->moveToCartesianPose(target_pose);
 }
-
-
-bool PickNPlace::traverseMove(geometry_msgs::Pose& pose)
-{
-  ROS_INFO("Traverse move to position (%.2f, %.2f, %.2f)", 
-      pose.position.x, pose.position.y, pose.position.z);
-  while (ros::ok()) {
-
-    // TODO
-    group_->getCurrentState()->update(true);
-
-    moveit_msgs::PlanningScene planning_scene;
-    planning_scene::PlanningScenePtr full_planning_scene;
-    getPlanningScene(planning_scene, full_planning_scene);
-
-    ////////////// Perform IK to find joint goal //////////////
-    moveit_msgs::GetPositionIK::Request ik_srv_req;
-
-    // setup IK request
-    ik_srv_req_.ik_request.group_name = "arm";
-    ik_srv_req_.ik_request.pose_stamped.header.frame_id = "base_link";
-    ik_srv_req_.ik_request.pose_stamped.header.stamp = ros::Time::now();
-    ik_srv_req_.ik_request.avoid_collisions = true;
-    ik_srv_req_.ik_request.attempts = 30;
-
-    // set pose
-    ik_srv_req_.ik_request.pose_stamped.pose = pose;
-
-    moveit_msgs::GetPositionIK::Response ik_srv_resp;
-    ik_service_client_.call(ik_srv_req_, ik_srv_resp);
-    if(ik_srv_resp.error_code.val !=1){
-      ROS_ERROR("IK couldn't find a solution (error code %d)", ik_srv_resp.error_code.val);
-      return false;
-    }
-    ROS_INFO("IK returned succesfully");
-    ///////////////////////////////////////////////////////////
-
-    // Fixing joint_0 and joint_6 given by the IK
-//     ik_srv_resp.solution.joint_state.position[0] = this->optimalGoalAngle(ik_srv_resp.solution.joint_state.position[0], planning_scene.robot_state.joint_state.position[0]);
-//     ik_srv_resp.solution.joint_state.position[6] = this->optimalGoalAngle(ik_srv_resp.solution.joint_state.position[6], planning_scene.robot_state.joint_state.position[6]);
-
-    // Plan trajectory
-    group_->getCurrentState()->update(true);
-    group_->setJointValueTarget(ik_srv_resp.solution.joint_state);
-    int num_tries = 4;
-    MoveGroupPlan my_plan;
-    // try to plan a few times, just to be safe
-    while (ros::ok() && num_tries > 0) {
-      if (group_->plan(my_plan))
-        break;
-      num_tries--;
-    }
-
-    if (num_tries > 0) {
-      // found plan, let's try and execute
-      if (executeJointTrajectory(my_plan)) {
-        ROS_INFO("Traverse joint trajectory execution successful");
-        return true;
-      }
-      else {
-        ROS_WARN("Traverse joint trajectory execution failed, going to restart");
-        ros::Duration(0.5).sleep();
-        continue;
-      }
-    }
-    else {
-      ROS_ERROR("Motion planning failed");
-      return false;
-    }
-  }
-}
-
-bool PickNPlace::ascent(double bin_height)
-{
-  ROS_INFO("Ascending");
-  return verticalMove(gripping_offset_ + bin_height + dz_offset_);
-}
-
-bool PickNPlace::descent(double bin_height)
-{
-  ROS_INFO("Descending");
-  return verticalMove(gripping_offset_ + bin_height);
-}
-
-bool PickNPlace::verticalMove(double target_z)
-{
-  ROS_INFO("Vertical move to target z: %f", target_z);
-
-  while (ros::ok()) {
-    // update the planning scene to get the robot's state
-    moveit_msgs::PlanningScene planning_scene;
-    planning_scene::PlanningScenePtr full_planning_scene;
-    getPlanningScene(planning_scene, full_planning_scene);
-
-    group_->getCurrentState()->update(true);
-
-    geometry_msgs::Pose pose1 = group_->getCurrentPose().pose;
-    geometry_msgs::Pose pose2 = pose1;
-    ROS_INFO("Calling cart path from pose pos = (%.2f, %.2f, %.2f), quat = (%.2f, %.2f, %.2f, w %.2f)",
-        pose1.position.x,
-        pose1.position.y,
-        pose1.position.z,
-        pose1.orientation.x,
-        pose1.orientation.y,
-        pose1.orientation.z,
-        pose1.orientation.w);
-
-    pose1.position.z = (pose1.position.z+target_z)/2.0;
-    pose2.position.z = target_z;
-    ROS_INFO("for pose pos = (%.2f, %.2f, %.2f), quat = (%.2f, %.2f, %.2f, w %.2f)",
-        pose2.position.x,
-        pose2.position.y,
-        pose2.position.z,
-        pose2.orientation.x,
-        pose2.orientation.y,
-        pose2.orientation.z,
-        pose2.orientation.w);
-    // find linear trajectory
-    moveit_msgs::RobotTrajectory lin_traj_msg, lin_traj_test_msg;
-    std::vector<geometry_msgs::Pose> waypoints;
-    // waypoints.push_back(pose1);
-    waypoints.push_back(pose2);
-
-    moveit_msgs::GetCartesianPath::Request req;
-    moveit_msgs::GetCartesianPath::Response res;
-    req.group_name = "arm";
-    req.header.frame_id = "base_link";
-    req.header.stamp = ros::Time::now();
-    req.waypoints = waypoints;
-    req.max_step = 0.05;
-    req.jump_threshold = 0.0;
-    req.avoid_collisions = true;
-    robot_state::robotStateToRobotStateMsg(*group_->getCurrentState(), req.start_state);
-    if (!cartesian_path_service_.call(req, res))
-      return false;
-    if (res.error_code.val != 1) {
-      ROS_ERROR("cartesian_path_service_ returned with error code %d", res.error_code.val);
-      return false;
-    }
-    double fraction = res.fraction;
-    lin_traj_msg = res.solution;
-
-    // create new robot trajectory object
-    robot_trajectory::RobotTrajectory lin_rob_traj(group_->getCurrentState()->getRobotModel(), "arm");
-
-    // copy the trajectory message into the robot trajectory object
-    lin_rob_traj.setRobotTrajectoryMsg(*group_->getCurrentState(), lin_traj_msg);
-
-    trajectory_processing::IterativeParabolicTimeParameterization iter_parab_traj_proc;
-    if(!iter_parab_traj_proc.computeTimeStamps(lin_rob_traj)) {
-      ROS_ERROR("Failed smoothing trajectory");
-      return false;
-    }
-
-    // put the smoothed trajectory back into the message....
-    lin_rob_traj.getRobotTrajectoryMsg(lin_traj_msg);
-
-    MoveGroupPlan lin_traj_plan;
-    lin_traj_plan.trajectory_ = lin_traj_msg;
-    ROS_INFO("computeCartesianPath fraction = %f", fraction);
-    if(fraction < 0.0) {
-      ROS_ERROR("Failed computeCartesianPath");
-      return false;
-    }
-
-    if (executeJointTrajectory(lin_traj_plan)) {
-      ROS_INFO("Vertical joint trajectory execution successful");
-      return true;
-    }
-    else {
-      ROS_WARN("Vertical joint trajectory execution failed, going to restart");
-      continue;
-    }
-  }
-}
-
-
-
-moveit_msgs::CollisionObjectPtr PickNPlace::getBinCollisionObject(int bin_number)
-{
-  std::string bin_name = "bin#" + boost::lexical_cast<std::string>(bin_number); 
-
-  // update the planning scene to get the robot's state
-  moveit_msgs::PlanningScene planning_scene;
-  planning_scene::PlanningScenePtr full_planning_scene;
-  getPlanningScene(planning_scene, full_planning_scene);
-
-  for(int i=0;i<planning_scene.world.collision_objects.size();i++){
-    if(planning_scene.world.collision_objects[i].id == bin_name){ 
-      return moveit_msgs::CollisionObjectPtr(new moveit_msgs::CollisionObject(planning_scene.world.collision_objects[i]));
-    }
-  }
-  ROS_ERROR("Failed to attach the bin. Attaching an empty collision object");
-  return moveit_msgs::CollisionObjectPtr();
-}
-
-void PickNPlace::getObjectAbovePose(moveit_msgs::CollisionObjectPtr bin_coll_obj, geometry_msgs::Pose& pose, 
-    double& bin_height)
-{
-  pose = bin_coll_obj->mesh_poses[0];
-
-  // fix height
-  bin_height = bin_coll_obj->meshes[0].vertices[0].z;
-  pose.position.z = gripping_offset_+bin_height+dz_offset_;
-
-  // fix orientation
-  tf::Quaternion co_quat(pose.orientation.x, pose.orientation.y, 
-      pose.orientation.z, pose.orientation.w);
-  tf::Matrix3x3 m(co_quat);
-  double roll, pitch, yaw;
-  m.getRPY(roll, pitch, yaw);
-  tf::Quaternion quat = tf::createQuaternionFromRPY(M_PI/2-yaw,M_PI/2,M_PI);
-  pose.orientation.x = quat.x();
-  pose.orientation.y = quat.y();
-  pose.orientation.z = quat.z();
-  pose.orientation.w = quat.w();
-}
-
-
-
-bool PickNPlace::deliverObject(int bin_number, double x_target, double y_target, double angle_target, double bin_height)
-{
-  ROS_INFO("Delivering to target (%.3f, %.3f, %f)", x_target, y_target, angle_target);
-
-  if(!ascent(bin_height)) {
-    ROS_ERROR("Failed to ascend while grasping bin.");
-    return false;
-  }
-  // update planning scene
-  if(!carryObjectTo(x_target, y_target, angle_target, bin_height)) {
-    ROS_ERROR("Failed to carry bin to target (%.3f, %.3f, %.3f)", 
-        x_target, y_target, angle_target);
-    return false;
-  }
-  // update planning scene
-  if(!descent(bin_height+0.02)) {
-    ROS_ERROR("Failed to descend after moving bin above target place.");
-    return false;
-  }
-  return true;
-}
-
-
-
-bool PickNPlace::carryObjectTo(double x_target, double y_target, double angle_target, double bin_height)
-{
-  ROS_INFO("Carrying bin to target (%.3f, %.3f, %f)", x_target, y_target, angle_target);
-  geometry_msgs::Pose target_pose;
-  getCarryObjectPose(x_target, y_target, angle_target, bin_height, target_pose);
-  return traverseMove(target_pose);
-}
-
-void PickNPlace::getCarryObjectPose(double x_target, double y_target, double angle_target, double bin_height,
-    geometry_msgs::Pose& pose)
-{
-  tf::Quaternion quat_goal = tf::createQuaternionFromRPY(M_PI/2-angle_target*M_PI/180.0, M_PI/2, M_PI);
-  pose.position.x = x_target;
-  pose.position.y = y_target;
-  pose.position.z = gripping_offset_ + bin_height + dz_offset_;
-  pose.orientation.x = quat_goal.x();
-  pose.orientation.y = quat_goal.y();
-  pose.orientation.z = quat_goal.z();
-  pose.orientation.w = quat_goal.w();
-}
-*/
-
-// bool PickNPlace::executeGripperAction(bool is_close, bool wait_for_result)
-// {
-//   if(is_close)
-//     ROS_INFO("Closing gripper");
-//   else
-//     ROS_INFO("Opening gripper");
-//   if(use_gripper) {
-//     // send a goal to the action
-//     control_msgs::GripperCommandGoal goal;
-//     goal.command.position = (is_close) ? 0.0 : 0.08;
-//     goal.command.max_effort = 100;
-//     gripper_ac.sendGoal(goal);
-//     if(wait_for_result)
-//       return gripper_ac.waitForResult(ros::Duration(30.0));
-//     else
-//       return true;
-//   }
-//   else {
-//     ros::Duration(2.0).sleep();
-//     return true;
-//   }
-// }
