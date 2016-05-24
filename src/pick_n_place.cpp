@@ -114,6 +114,7 @@ bool PickNPlace::compute_ik(const geometry_msgs::Pose pose, sensor_msgs::JointSt
   // setup IK request
 //   ik_srv_req_.ik_request.robot_state = planning_scene_msg_.robot_state;
   ik_srv_req_.ik_request.pose_stamped.header.stamp = ros::Time::now();
+  ik_srv_req_.ik_request.pose_stamped.header.frame_id = base_frame_;
   ik_srv_req_.ik_request.pose_stamped.pose = pose;
   
   ik_service_client_.call(ik_srv_req_, ik_srv_resp_);
@@ -611,12 +612,15 @@ bool PickNPlace::moveAboveEpingle(const std::string obj_name)
   if (!coll_obj)
     return false;
 
-  geometry_msgs::Pose target_pose, obj_pose;
-  obj_pose = coll_obj->mesh_poses[0];
+  geometry_msgs::PoseStamped obj_pose;
+  geometry_msgs::Pose target_pose;
+  obj_pose.header = coll_obj->header;
+  obj_pose.pose = coll_obj->mesh_poses[0];
+  tf_->transformPose(base_frame_, obj_pose, obj_pose);
   
   tf::Transform object_transform;
-  object_transform.setOrigin(tf::Vector3(obj_pose.position.x, obj_pose.position.y, obj_pose.position.z));
-  object_transform.setRotation(tf::Quaternion(obj_pose.orientation.x, obj_pose.orientation.y, obj_pose.orientation.z, obj_pose.orientation.w));
+  object_transform.setOrigin(tf::Vector3(obj_pose.pose.position.x, obj_pose.pose.position.y, obj_pose.pose.position.z));
+  object_transform.setRotation(tf::Quaternion(obj_pose.pose.orientation.x, obj_pose.pose.orientation.y, obj_pose.pose.orientation.z, obj_pose.pose.orientation.w));
   
   tf::Transform up_transform;
   up_transform.setOrigin(tf::Vector3(0.0, 0.0, 0.12));
@@ -651,12 +655,15 @@ bool PickNPlace::moveToEpingle(const std::string obj_name)
   if (!coll_obj)
     return false;
 
-  geometry_msgs::Pose target_pose, obj_pose;
-  obj_pose = coll_obj->mesh_poses[0];
+  geometry_msgs::PoseStamped obj_pose;
+  geometry_msgs::Pose target_pose;
+  obj_pose.header = coll_obj->header;
+  obj_pose.pose = coll_obj->mesh_poses[0];
+  tf_->transformPose(base_frame_, obj_pose, obj_pose);
   
   tf::Transform object_transform;
-  object_transform.setOrigin(tf::Vector3(obj_pose.position.x, obj_pose.position.y, obj_pose.position.z));
-  object_transform.setRotation(tf::Quaternion(obj_pose.orientation.x, obj_pose.orientation.y, obj_pose.orientation.z, obj_pose.orientation.w));
+  object_transform.setOrigin(tf::Vector3(obj_pose.pose.position.x, obj_pose.pose.position.y, obj_pose.pose.position.z));
+  object_transform.setRotation(tf::Quaternion(obj_pose.pose.orientation.x, obj_pose.pose.orientation.y, obj_pose.pose.orientation.z, obj_pose.pose.orientation.w));
   
   tf::Transform up_transform;
   up_transform.setOrigin(tf::Vector3(0.0, 0.0, 0.06));
@@ -691,12 +698,15 @@ bool PickNPlace::moveAbovePlaque(const std::string obj_name)
   if (!coll_obj)
     return false;
 
-  geometry_msgs::Pose target_pose, obj_pose;
-  obj_pose = coll_obj->mesh_poses[0];
+  geometry_msgs::PoseStamped obj_pose;
+  geometry_msgs::Pose target_pose;
+  obj_pose.header = coll_obj->header;
+  obj_pose.pose = coll_obj->mesh_poses[0];
+  tf_->transformPose(base_frame_, obj_pose, obj_pose);
   
   tf::Transform object_transform;
-  object_transform.setOrigin(tf::Vector3(obj_pose.position.x, obj_pose.position.y, obj_pose.position.z));
-  object_transform.setRotation(tf::Quaternion(obj_pose.orientation.x, obj_pose.orientation.y, obj_pose.orientation.z, obj_pose.orientation.w));
+  object_transform.setOrigin(tf::Vector3(obj_pose.pose.position.x, obj_pose.pose.position.y, obj_pose.pose.position.z));
+  object_transform.setRotation(tf::Quaternion(obj_pose.pose.orientation.x, obj_pose.pose.orientation.y, obj_pose.pose.orientation.z, obj_pose.pose.orientation.w));
   
   tf::Transform up_transform;
   up_transform.setOrigin(tf::Vector3(0.0, 0.0, -0.3));
@@ -724,12 +734,15 @@ bool PickNPlace::moveToPlaque(const std::string obj_name)
   if (!coll_obj)
     return false;
 
-  geometry_msgs::Pose target_pose, obj_pose;
-  obj_pose = coll_obj->mesh_poses[0];
+  geometry_msgs::PoseStamped obj_pose;
+  geometry_msgs::Pose target_pose;
+  obj_pose.header = coll_obj->header;
+  obj_pose.pose = coll_obj->mesh_poses[0];
+  tf_->transformPose(base_frame_, obj_pose, obj_pose);
   
   tf::Transform object_transform;
-  object_transform.setOrigin(tf::Vector3(obj_pose.position.x, obj_pose.position.y, obj_pose.position.z));
-  object_transform.setRotation(tf::Quaternion(obj_pose.orientation.x, obj_pose.orientation.y, obj_pose.orientation.z, obj_pose.orientation.w));
+  object_transform.setOrigin(tf::Vector3(obj_pose.pose.position.x, obj_pose.pose.position.y, obj_pose.pose.position.z));
+  object_transform.setRotation(tf::Quaternion(obj_pose.pose.orientation.x, obj_pose.pose.orientation.y, obj_pose.pose.orientation.z, obj_pose.pose.orientation.w));
   
   tf::Transform up_transform;
   up_transform.setOrigin(tf::Vector3(0.0, 0.0, -0.2));
